@@ -79,7 +79,7 @@ async function run() {
                 })
             }
         })
-        
+
         // get all users
         app.get('/all-users', async (req, res) => {
             try {
@@ -240,7 +240,7 @@ async function run() {
             }
         });
         // update password
-        app.put('/update-password/:id', async (req, res) => {
+        app.put('/reset-password/:id', async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
