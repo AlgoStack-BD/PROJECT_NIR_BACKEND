@@ -3,7 +3,6 @@ const cors = require("cors")
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
 require('dotenv').config()
-const { randomBytes } = require('crypto'); // For generating OTP
 const nodemailer = require('nodemailer');
 
 
@@ -57,6 +56,30 @@ async function run() {
                 })
             }
         })
+        // login user
+        app.post('/login-user', async (req, res) => {
+            const { email, password } = req.body;
+            const query = { email: email, password: password };
+            try {
+                const result = await usersCollection.findOne(query);
+                if (!result) {
+                    return res.json({
+                        status: 404,
+                        message: "User not found"
+                    })
+                }
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        
         // get all users
         app.get('/all-users', async (req, res) => {
             try {
@@ -216,6 +239,38 @@ async function run() {
                 });
             }
         });
+        // update password
+        app.put('/update-password/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const { data } = req.body;
+            try {
+                const getSingleUser = await usersCollection.findOne(query);
+                if (!getSingleUser) {
+                    return res.json({
+                        status: 404,
+                        message: "User not found"
+                    })
+                }
+                console.log(getSingleUser)
+                const result = await usersCollection.updateOne(query, {
+                    // schema validation 
+                    $set: {
+                        password: data.password,
+                    }
+                });
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
 
     } finally {
         // Ensures that the client will close when you finish/error
