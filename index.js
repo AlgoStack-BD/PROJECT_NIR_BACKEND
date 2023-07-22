@@ -40,7 +40,7 @@ async function run() {
         const otpCollection = database.collection('otp');
 
         // create user
-        app.post('/create-user', async (req, res) => {
+        app.post('/register', async (req, res) => {
             const { data } = req.body;
             try {
                 const result = await usersCollection.insertOne(data);
@@ -57,7 +57,7 @@ async function run() {
             }
         })
         // login user
-        app.post('/login-user', async (req, res) => {
+        app.post('/login', async (req, res) => {
             const { email, password } = req.body;
             const query = { email: email, password: password };
             try {
