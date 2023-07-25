@@ -38,6 +38,8 @@ async function run() {
         const database = client.db('nir');
         const usersCollection = database.collection('users');
         const otpCollection = database.collection('otp');
+        const postsCollection = database.collection('posts');
+
 
         // create user
         app.post('/register', async (req, res) => {
@@ -123,35 +125,34 @@ async function run() {
                     return res.json({
                         status: 404,
                         message: "User not found"
-                    })
+                    });
                 }
-                console.log(getSingleUser)
-                const result = await usersCollection.updateOne(query, {
-                    // schema validation 
-                    $set: {
-                        name: data.name,
-                        email: data.email,
-                        password: data.password,
-                        phone: data.phone,
-                        isVerified: data.isVerified,
-                        image: data.image,
-                        location: data.location,
-                        totoalPost: data.totoalPost,
-                        rentSuccess: data.rentSuccess,
-                    }
-                });
+
+                // Construct the update object conditionally based on the fields in the data object
+                const updateObject = {};
+                if (data.name) updateObject.name = data.name;
+                if (data.email) updateObject.email = data.email;
+                if (data.password) updateObject.password = data.password;
+                if (data.phone) updateObject.phone = data.phone;
+                if (data.isVerified !== undefined) updateObject.isVerified = data.isVerified;
+                if (data.image !== undefined) updateObject.image = data.image;
+                if (data.location) updateObject.location = data.location;
+                if (data.totalPost !== undefined) updateObject.totalPost = data.totalPost;
+                if (data.rentSuccess !== undefined) updateObject.rentSuccess = data.rentSuccess;
+
+                const result = await usersCollection.updateOne(query, { $set: updateObject });
+
                 res.json({
                     status: 200,
                     data: result
-                })
-            }
-            catch (err) {
+                });
+            } catch (err) {
                 res.json({
                     status: 500,
                     message: "Internal Server Error"
-                })
+                });
             }
-        })
+        });
         // delete single user
         app.delete('/delete-user/:id', async (req, res) => {
             const { id } = req.params;
@@ -271,7 +272,126 @@ async function run() {
                 })
             }
         })
+        // create post
+        app.post('/create-post', async (req, res) => {
+            const { data } = req.body;
+            try {
+                const result = await postsCollection.insertOne(data);
+                // check schema validation
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 200,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get all posts
+        app.get('/all-posts', async (req, res) => {
+            try {
+                const result = await postsCollection.find().toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get single post
+        app.get('/single-post/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await postsCollection.findOne(query);
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // update single post
+        // update single post
+        app.put('/update-post/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            const { data } = req.body;
+            try {
+                const getSinglePost = await postsCollection.findOne(query);
+                if (!getSinglePost) {
+                    return res.json({
+                        status: 404,
+                        message: "Post not found"
+                    });
+                }
 
+                console.log(getSinglePost);
+
+                // Construct the update object conditionally based on the fields in the data object
+                const updateObject = {};
+                if (data.location) updateObject.location = data.location;
+                if (data.type) updateObject.type = data.type;
+                if (data.isNegotiable !== undefined) updateObject.isNegotiable = data.isNegotiable;
+                if (data.bedRoom !== undefined) updateObject.bedRoom = data.bedRoom;
+                if (data.bathRoom !== undefined) updateObject.bathRoom = data.bathRoom;
+                if (data.kitchen !== undefined) updateObject.kitchen = data.kitchen;
+                if (data.drawingRoom !== undefined) updateObject.drawingRoom = data.drawingRoom;
+                if (data.diningRoom !== undefined) updateObject.diningRoom = data.diningRoom;
+                if (data.balcony !== undefined) updateObject.balcony = data.balcony;
+                if (data.bills !== undefined) updateObject.bills = data.bills;
+                if (data.img !== undefined) updateObject.img = data.img;
+                if (data.price !== undefined) updateObject.price = data.price;
+                if (data.additionalMessage !== undefined) updateObject.additionalMessage = data.additionalMessage;
+                if (data.likeCount !== undefined) updateObject.likeCount = data.likeCount;
+                if (data.isPublicNumber !== undefined) updateObject.isPublicNumber = data.isPublicNumber;
+                if (data.isSold !== undefined) updateObject.isSold = data.isSold;
+                if (data.isApproved !== undefined) updateObject.isApproved = data.isApproved;
+                if (data.isAdminPost !== undefined) updateObject.isAdminPost = data.isAdminPost;
+
+                const result = await postsCollection.updateOne(query, { $set: updateObject });
+
+                res.json({
+                    status: 200,
+                    data: result
+                });
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                });
+            }
+        });
+        // delete single post
+        app.delete('/delete-post/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await postsCollection.deleteOne(query);
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
