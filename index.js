@@ -1,5 +1,6 @@
 const express = require("express")
 const cors = require("cors")
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
 require('dotenv').config()
@@ -12,6 +13,28 @@ const port = process.env.PORT || 5000
 // Middleware
 app.use(cors())
 app.use(express.json())
+// Middleware to verify JWT in API requests
+function verifyJWT(req, res, next) {
+    const token = req.header('Authorization');
+
+    if (!token) {
+        return res.status(401).json({ status: 401, message: 'Authorization token missing' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(403).json({ status: 403, message: 'Invalid or expired JWT token' });
+    }
+}
+
+
+// Generate JWT token function
+function generateToken(payload) {
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }); // Set the expiration time as desired
+}
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uq4tjid.mongodb.net/?retryWrites=true&w=majority`;
 // Initialize SendGrid with your API key
@@ -46,11 +69,13 @@ async function run() {
             const { data } = req.body;
             try {
                 const result = await usersCollection.insertOne(data);
-                // check schema validation
+                // Generate and send JWT token in the response
+                const token = generateToken({ userId: result.insertedId }); // Include any additional data you want in the payload
                 res.json({
                     status: 200,
-                    data: result
-                })
+                    data: result,
+                    jwt: token
+                });
             } catch (err) {
                 res.json({
                     status: 500,
@@ -70,10 +95,13 @@ async function run() {
                         message: "User not found"
                     })
                 }
+                // Generate and send JWT token in the response
+                const token = generateToken({ userId: result._id }); // Include any additional data you want in the payload
                 res.json({
                     status: 200,
-                    data: result
-                })
+                    data: result,
+                    jwt: token
+                });
             } catch (err) {
                 res.json({
                     status: 500,
@@ -83,7 +111,7 @@ async function run() {
         })
 
         // get all users
-        app.get('/all-users', async (req, res) => {
+        app.get('/all-users', verifyJWT, async (req, res) => {
             try {
                 const result = await usersCollection.find().toArray();
                 res.json({
@@ -98,7 +126,7 @@ async function run() {
             }
         })
         // get single user
-        app.get('/single-user/:id', async (req, res) => {
+        app.get('/single-user/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             try {
@@ -115,7 +143,7 @@ async function run() {
             }
         })
         // update single user all data - for admin
-        app.put('/update-user/:id', async (req, res) => {
+        app.put('/update-user/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
@@ -154,7 +182,7 @@ async function run() {
             }
         });
         // delete single user
-        app.delete('/delete-user/:id', async (req, res) => {
+        app.delete('/delete-user/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             try {
@@ -172,7 +200,7 @@ async function run() {
         })
 
         // send verification code to email
-        app.post('/getVerificationCode', async (req, res) => {
+        app.post('/getVerificationCode', verifyJWT, async (req, res) => {
             const { email } = req.body;
 
             // Generate a random 4-digit OTP
@@ -211,7 +239,7 @@ async function run() {
         });
 
         // Route to verify the user-provided OTP against the last generated OTP
-        app.post('/verifyOTP', async (req, res) => {
+        app.post('/verifyOTP', verifyJWT, async (req, res) => {
             const { email, userOTP } = req.body;
 
             // Find the last OTP generated for the provided email address
@@ -241,7 +269,7 @@ async function run() {
             }
         });
         // update password
-        app.put('/reset-password/:id', async (req, res) => {
+        app.put('/reset-password/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
@@ -253,7 +281,6 @@ async function run() {
                         message: "User not found"
                     })
                 }
-                console.log(getSingleUser)
                 const result = await usersCollection.updateOne(query, {
                     // schema validation 
                     $set: {
@@ -273,7 +300,7 @@ async function run() {
             }
         })
         // create post
-        app.post('/create-post', async (req, res) => {
+        app.post('/create-post', verifyJWT, async (req, res) => {
             const { data } = req.body;
             try {
                 const result = await postsCollection.insertOne(data);
@@ -290,7 +317,7 @@ async function run() {
             }
         })
         // get all posts
-        app.get('/all-posts', async (req, res) => {
+        app.get('/all-posts', verifyJWT, async (req, res) => {
             try {
                 const result = await postsCollection.find().toArray();
                 res.json({
@@ -306,7 +333,7 @@ async function run() {
             }
         })
         // get single post
-        app.get('/single-post/:id', async (req, res) => {
+        app.get('/single-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             try {
@@ -324,7 +351,7 @@ async function run() {
         })
         // update single post
         // update single post
-        app.put('/update-post/:id', async (req, res) => {
+        app.put('/update-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
@@ -337,7 +364,6 @@ async function run() {
                     });
                 }
 
-                console.log(getSinglePost);
 
                 // Construct the update object conditionally based on the fields in the data object
                 const updateObject = {};
@@ -374,7 +400,7 @@ async function run() {
             }
         });
         // delete single post
-        app.delete('/delete-post/:id', async (req, res) => {
+        app.delete('/delete-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             try {
@@ -391,7 +417,7 @@ async function run() {
                 })
             }
         })
-        
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
