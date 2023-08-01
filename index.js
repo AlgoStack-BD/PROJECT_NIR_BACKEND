@@ -92,7 +92,7 @@ async function run() {
                 if (!result) {
                     return res.json({
                         status: 404,
-                        message: "User not found"
+                        message: "User does not exist with this credentials"
                     })
                 }
                 // Generate and send JWT token in the response
