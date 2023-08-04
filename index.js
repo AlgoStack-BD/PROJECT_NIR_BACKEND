@@ -83,18 +83,26 @@ async function run() {
                 })
             }
         })
-        // login user
+        // login user - check isVarified true or false
         app.post('/login', async (req, res) => {
             const { email, password } = req.body;
             const query = { email: email, password: password };
             try {
                 const result = await usersCollection.findOne(query);
+                // console.log(result)
                 if (!result) {
                     return res.json({
                         status: 404,
                         message: "User does not exist with this credentials"
                     })
                 }
+                if(result.isVerified === false){
+                    return res.json({
+                        status: 401,
+                        message: "User is not verified"
+                    })
+                }
+
                 // Generate and send JWT token in the response
                 const token = generateToken({ userId: result._id }); // Include any additional data you want in the payload
                 res.json({
