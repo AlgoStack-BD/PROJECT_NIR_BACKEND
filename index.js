@@ -14,6 +14,10 @@ const port = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 // Middleware to verify JWT in API requests
+// Simulated blacklist of invalidated tokens
+const invalidatedTokens = new Set();
+
+// Middleware to verify JWT
 function verifyJWT(req, res, next) {
     const token = req.header('Authorization');
 
@@ -21,20 +25,34 @@ function verifyJWT(req, res, next) {
         return res.status(401).json({ status: 401, message: 'Authorization token missing' });
     }
 
+    if (invalidatedTokens.has(token)) {
+        return res.status(401).json({ status: 401, message: 'Token has been invalidated' });
+    }
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(403).json({ status: 403, message: 'Invalid or expired JWT token' });
+        return res.status(403).json({ status: 403, message: 'Invalid JWT token' });
     }
 }
 
 
 // Generate JWT token function
 function generateToken(payload) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }); // Set the expiration time as desired
+    return jwt.sign(payload, process.env.JWT_SECRET);
 }
+
+app.get('/logout', (req, res) => {
+    const token = req.query.jwt;
+    if (!token) {
+        return res.status(400).json({ status: 400, message: 'JWT query parameter missing' });
+    }
+
+    invalidatedTokens.add(token);
+    res.json({ message: 'Token invalidated' });
+});
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uq4tjid.mongodb.net/?retryWrites=true&w=majority`;
 // Initialize SendGrid with your API key
@@ -96,7 +114,7 @@ async function run() {
                         message: "User does not exist with this credentials"
                     })
                 }
-                if(result.isVerified === false){
+                if (result.isVerified === false) {
                     return res.json({
                         status: 401,
                         message: "User is not verified"
