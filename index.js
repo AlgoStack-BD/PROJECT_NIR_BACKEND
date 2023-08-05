@@ -139,7 +139,27 @@ async function run() {
         // get all users
         app.get('/all-users', verifyJWT, async (req, res) => {
             try {
-                const result = await usersCollection.find().toArray();
+                const result = await usersCollection.find({
+                    // only get isVarified true users
+                    isVerified: true
+                }).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get unverified users
+        app.get('/all-unverified-users', verifyJWT, async (req, res) => {
+            try {
+                const result = await usersCollection.find({
+                    isVerified: false
+                }).toArray();
                 res.json({
                     status: 200,
                     data: result
