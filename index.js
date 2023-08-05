@@ -363,7 +363,7 @@ async function run() {
             }
         })
         // get all posts
-        app.get('/all-posts', verifyJWT, async (req, res) => {
+        app.get('/all-posts', async (req, res) => {
             try {
                 const result = await postsCollection.find().toArray();
                 res.json({
