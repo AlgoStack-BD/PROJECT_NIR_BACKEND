@@ -85,7 +85,19 @@ async function run() {
         // create user
         app.post('/register', async (req, res) => {
             const { data } = req.body;
+            const {email} = data
             try {
+                // CHECK if the email are already exist or not
+                   const existingUser = await usersCollection.findOne({email})
+                   if(existingUser){
+                    return res.json({
+                        status: 400,
+                        message: "This email is already registered"
+                    })
+                   }
+
+                // if email is not already registerd,
+
                 const result = await usersCollection.insertOne(data);
                 // Generate and send JWT token in the response
                 const token = generateToken({ userId: result.insertedId }); // Include any additional data you want in the payload
@@ -303,9 +315,13 @@ async function run() {
 
             // Compare the user-provided OTP with the last generated OTP
             if (userOTP === lastOTPData.otp) {
+                 // Fetch the UserID from the JWT token
+                  const userId = req.user.userId;
                 res.json({
                     status: 200,
-                    message: "OTP verification successful"
+                    message: userId,
+                    userID: userId
+                
                 });
             } else {
                 res.json({
@@ -314,6 +330,7 @@ async function run() {
                 });
             }
         });
+        
         // update password
         app.put('/reset-password/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
