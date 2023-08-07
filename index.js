@@ -332,10 +332,10 @@ async function run() {
         });
         
         // update password
-        app.put('/reset-password/:id', verifyJWT, async (req, res) => {
-            const { id } = req.params;
-            const query = { _id: new ObjectId(id) };
+        app.put('/reset-password', async (req, res) => {
             const { data } = req.body;
+            const email = data.email;
+            const query = { email: email };
             try {
                 const getSingleUser = await usersCollection.findOne(query);
                 if (!getSingleUser) {
