@@ -85,16 +85,16 @@ async function run() {
         // create user
         app.post('/register', async (req, res) => {
             const { data } = req.body;
-            const {email} = data
+            const { email } = data
             try {
                 // CHECK if the email are already exist or not
-                   const existingUser = await usersCollection.findOne({email})
-                   if(existingUser){
+                const existingUser = await usersCollection.findOne({ email })
+                if (existingUser) {
                     return res.json({
                         status: 400,
                         message: "This email is already registered"
                     })
-                   }
+                }
 
                 // if email is not already registerd,
 
@@ -203,10 +203,12 @@ async function run() {
         // update single user all data - for admin
         app.put('/update-user/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
+            console.log(id)
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
             try {
                 const getSingleUser = await usersCollection.findOne(query);
+                console.log(getSingleUser)
                 if (!getSingleUser) {
                     return res.json({
                         status: 404,
@@ -215,19 +217,20 @@ async function run() {
                 }
 
                 // Construct the update object conditionally based on the fields in the data object
-                const updateObject = {};
+                let updateObject = {};
                 if (data.name) updateObject.name = data.name;
                 if (data.email) updateObject.email = data.email;
                 if (data.password) updateObject.password = data.password;
-                if (data.phone) updateObject.phone = data.phone;
+                if (data.phone !== undefined) updateObject.phone = data.phone;
                 if (data.isVerified !== undefined) updateObject.isVerified = data.isVerified;
                 if (data.image !== undefined) updateObject.image = data.image;
                 if (data.location) updateObject.location = data.location;
                 if (data.totalPost !== undefined) updateObject.totalPost = data.totalPost;
                 if (data.rentSuccess !== undefined) updateObject.rentSuccess = data.rentSuccess;
-
+                if (data.isAdmin !== undefined) updateObject.isAdmin = data.isAdmin;
+                console.log(updateObject)
                 const result = await usersCollection.updateOne(query, { $set: updateObject });
-
+                // console.log(result);
                 res.json({
                     status: 200,
                     data: result
@@ -315,13 +318,13 @@ async function run() {
 
             // Compare the user-provided OTP with the last generated OTP
             if (userOTP === lastOTPData.otp) {
-                 // Fetch the UserID from the JWT token
-                  const userId = req.user.userId;
+                // Fetch the UserID from the JWT token
+                const userId = req.user.userId;
                 res.json({
                     status: 200,
                     message: userId,
                     userID: userId
-                
+
                 });
             } else {
                 res.json({
@@ -330,7 +333,7 @@ async function run() {
                 });
             }
         });
-        
+
         // update password
         app.put('/reset-password', async (req, res) => {
             const { data } = req.body;
