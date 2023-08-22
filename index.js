@@ -54,9 +54,8 @@ app.get('/logout', (req, res) => {
     res.json({ message: 'Token invalidated' });
 });
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.uq4tjid.mongodb.net/?retryWrites=true&w=majority`;
-// Initialize SendGrid with your API key
-
+// mongodb connection
+const uri = process.env.MONGODB_URI;    
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -76,6 +75,7 @@ const transporter = nodemailer.createTransport({
 
 async function run() {
     try {
+        // await client.connect();
         const database = client.db('nir');
         const usersCollection = database.collection('users');
         const otpCollection = database.collection('otp');
