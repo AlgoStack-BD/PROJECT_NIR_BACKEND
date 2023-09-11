@@ -228,6 +228,15 @@ async function run() {
                 if (data.totalPost !== undefined) updateObject.totalPost = data.totalPost;
                 if (data.rentSuccess !== undefined) updateObject.rentSuccess = data.rentSuccess;
                 if (data.isAdmin !== undefined) updateObject.isAdmin = data.isAdmin;
+                if(data.lookingFor !== undefined) updateObject.lookingFor = data.lookingFor;
+                if(data.accountType !== undefined) updateObject.accountType = data.accountType;
+                if(data.subscriptionStatus !== undefined) updateObject.subscriptionStatus = data.subscriptionStatus; 
+                if(data.subscriptionId !== undefined) updateObject.subscriptionId = data.subscriptionId;
+                if(data.expiresIn !== undefined) updateObject.expiresIn = data.expiresIn;
+                if(data.bkash !== undefined) updateObject.bkash = data.bkash;
+                if(data.rocket !== undefined) updateObject.rocket = data.rocket;
+                if(data.nagad !== undefined) updateObject.nagad = data.nagad;
+                
                 console.log(updateObject)
                 const result = await usersCollection.updateOne(query, { $set: updateObject });
                 // console.log(result);
@@ -415,7 +424,25 @@ async function run() {
                 })
             }
         })
-        // update single post
+        // get single post by userId
+        app.get('/single-post-by-userId/:id', verifyJWT, async (req, res) => {
+            const { id } = req.params;
+            // console.log(id)
+            const query = { userId: id };
+            try {
+                const result = await postsCollection.find(query).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+
         // update single post
         app.put('/update-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
