@@ -5,7 +5,7 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const { ObjectId } = require('mongodb');
 require('dotenv').config()
 const nodemailer = require('nodemailer');
-
+const multer = require('multer');
 
 const app = express()
 const port = process.env.PORT || 5000
@@ -55,7 +55,7 @@ app.get('/logout', (req, res) => {
 });
 
 // mongodb connection
-const uri = process.env.MONGODB_URI;    
+const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
     serverApi: {
         version: ServerApiVersion.v1,
@@ -73,6 +73,21 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Multer storage configuration
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/'); // Specify the upload directory
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + file.originalname); // Specify the filename
+    },
+});
+
+const upload = multer({ storage });
+
+// Serve static files from the uploads directory to the /uploads route for image preview
+app.use('/uploads', express.static('uploads'));
+
 async function run() {
     try {
         // await client.connect();
@@ -81,7 +96,24 @@ async function run() {
         const otpCollection = database.collection('otp');
         const postsCollection = database.collection('posts');
 
+        // Define the upload route
+        app.post('/upload', upload.single('file'), (req, res) => {
+            try {
+                const uploadedFile = req.file;
+                if (!uploadedFile) {
+                    return res.status(400).json({ message: 'No file uploaded' });
+                }
+                const fileName = uploadedFile.filename;
+                console.log('File uploaded:', fileName);
 
+                // You can do further processing with the uploaded file here
+
+                return res.status(200).json({ message: 'File uploaded successfully', fileName });
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                return res.status(500).json({ message: 'Internal Server Error' });
+            }
+        });
         // create user
         app.post('/register', async (req, res) => {
             const { data } = req.body;
@@ -200,12 +232,17 @@ async function run() {
                 })
             }
         })
+
+
         // update single user all data - for admin
-        app.put('/update-user/:id', verifyJWT, async (req, res) => {
+        app.put('/update-user/:id', verifyJWT, upload.single('file'), async (req, res) => {
             const { id } = req.params;
             console.log(id)
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
+            console.log(data)
+            console.log('hit')
+            console.log(req.file)
             try {
                 const getSingleUser = await usersCollection.findOne(query);
                 console.log(getSingleUser)
@@ -218,26 +255,30 @@ async function run() {
 
                 // Construct the update object conditionally based on the fields in the data object
                 let updateObject = {};
-                if (data.name) updateObject.name = data.name;
-                if (data.email) updateObject.email = data.email;
-                if (data.password) updateObject.password = data.password;
-                if (data.phone !== undefined) updateObject.phone = data.phone;
-                if (data.isVerified !== undefined) updateObject.isVerified = data.isVerified;
-                if (data.image !== undefined) updateObject.image = data.image;
-                if (data.location) updateObject.location = data.location;
-                if (data.totalPost !== undefined) updateObject.totalPost = data.totalPost;
-                if (data.rentSuccess !== undefined) updateObject.rentSuccess = data.rentSuccess;
-                if (data.isAdmin !== undefined) updateObject.isAdmin = data.isAdmin;
-                if(data.lookingFor !== undefined) updateObject.lookingFor = data.lookingFor;
-                if(data.accountType !== undefined) updateObject.accountType = data.accountType;
-                if(data.subscriptionStatus !== undefined) updateObject.subscriptionStatus = data.subscriptionStatus; 
-                if(data.subscriptionId !== undefined) updateObject.subscriptionId = data.subscriptionId;
-                if(data.expiresIn !== undefined) updateObject.expiresIn = data.expiresIn;
-                if(data.bkash !== undefined) updateObject.bkash = data.bkash;
-                if(data.rocket !== undefined) updateObject.rocket = data.rocket;
-                if(data.nagad !== undefined) updateObject.nagad = data.nagad;
-                
-                console.log(updateObject)
+                if (data?.name !== undefined) updateObject.name = data?.name;
+                if (data?.email) updateObject.email = data?.email;
+                if (data?.password) updateObject.password = data?.password;
+                if (data?.phone !== undefined) updateObject.phone = data?.phone;
+                if (data?.isVerified !== undefined) updateObject.isVerified = data?.isVerified;
+                if (data?.image !== undefined) updateObject.image = data?.image;
+                if (data?.location) updateObject.location = data?.location;
+                if (data?.totalPost !== undefined) updateObject.totalPost = data?.totalPost;
+                if (data?.rentSuccess !== undefined) updateObject.rentSuccess = data?.rentSuccess;
+                if (data?.isAdmin !== undefined) updateObject.isAdmin = data?.isAdmin;
+                if (data?.lookingFor !== undefined) updateObject.lookingFor = data?.lookingFor;
+                if (data?.accountType !== undefined) updateObject.accountType = data?.accountType;
+                if (data?.subscriptionStatus !== undefined) updateObject.subscriptionStatus = data?.subscriptionStatus;
+                if (data?.subscriptionId !== undefined) updateObject.subscriptionId = data?.subscriptionId;
+                if (data?.expiresIn !== undefined) updateObject.expiresIn = data?.expiresIn;
+                if (data?.bkash !== undefined) updateObject.bkash = data?.bkash;
+                if (data?.rocket !== undefined) updateObject.rocket = data?.rocket;
+                if (data?.nagad !== undefined) updateObject.nagad = data?.nagad;
+
+                // Check if req.file exists (image uploaded)
+                if (req.file) {
+                    updateObject.image = req.file.filename; // Save the uploaded filename
+                    // console.log('aise')
+                }
                 const result = await usersCollection.updateOne(query, { $set: updateObject });
                 // console.log(result);
                 res.json({
@@ -245,6 +286,7 @@ async function run() {
                     data: result
                 });
             } catch (err) {
+                console.log(err)
                 res.json({
                     status: 500,
                     message: "Internal Server Error"
