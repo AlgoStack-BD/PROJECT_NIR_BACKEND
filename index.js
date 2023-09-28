@@ -240,7 +240,6 @@ async function run() {
             console.log(id)
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
-            console.log(data)
             console.log('hit')
             console.log(req.file)
             try {
