@@ -183,10 +183,7 @@ async function run() {
         // get all users
         app.get('/all-users', verifyJWT, async (req, res) => {
             try {
-                const result = await usersCollection.find({
-                    // only get isVarified true users
-                    isVerified: true
-                }).toArray();
+                const result = await usersCollection.find({}).toArray();
                 res.json({
                     status: 200,
                     data: result
