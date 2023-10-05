@@ -117,7 +117,10 @@ async function run() {
         // create user
         app.post('/register', async (req, res) => {
             const { data } = req.body;
-            const { email } = data
+            const { email } = data;
+            // add createdAt time
+            data.createdAt = new Date();
+            data.updatedAt = new Date();
             try {
                 // CHECK if the email are already exist or not
                 const existingUser = await usersCollection.findOne({ email })
@@ -129,7 +132,6 @@ async function run() {
                 }
 
                 // if email is not already registerd,
-
                 const result = await usersCollection.insertOne(data);
                 // Generate and send JWT token in the response
                 const token = generateToken({ userId: result.insertedId }); // Include any additional data you want in the payload
@@ -269,7 +271,8 @@ async function run() {
                 if (data?.bkash !== undefined) updateObject.bkash = data?.bkash;
                 if (data?.rocket !== undefined) updateObject.rocket = data?.rocket;
                 if (data?.nagad !== undefined) updateObject.nagad = data?.nagad;
-
+                // add update time
+                updateObject.updatedAt = new Date();
                 // Check if req.file exists (image uploaded)
                 if (req.file) {
                     updateObject.image = req.file.filename; // Save the uploaded filename
@@ -415,7 +418,11 @@ async function run() {
         // create post
         app.post('/create-post', verifyJWT, async (req, res) => {
             const { data } = req.body;
+            // add createdAt time and updatedAt time
+            data.createdAt = new Date();
+            data.updatedAt = new Date();
             try {
+
                 const result = await postsCollection.insertOne(data);
                 // check schema validation
                 res.json({
@@ -445,7 +452,7 @@ async function run() {
                 })
             }
         })
-        // get single post
+        // get single post 
         app.get('/single-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
@@ -516,6 +523,8 @@ async function run() {
                 if (data.isSold !== undefined) updateObject.isSold = data.isSold;
                 if (data.isApproved !== undefined) updateObject.isApproved = data.isApproved;
                 if (data.isAdminPost !== undefined) updateObject.isAdminPost = data.isAdminPost;
+                // add update time
+                updateObject.updatedAt = new Date();
 
                 const result = await postsCollection.updateOne(query, { $set: updateObject });
 
