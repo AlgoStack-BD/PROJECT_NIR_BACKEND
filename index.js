@@ -424,7 +424,6 @@ async function run() {
             try {
 
                 const result = await postsCollection.insertOne(data);
-                // check schema validation
                 res.json({
                     status: 200,
                     data: result
