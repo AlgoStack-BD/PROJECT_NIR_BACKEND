@@ -240,7 +240,7 @@ async function run() {
             const query = { _id: new ObjectId(id) };
             const { data } = req.body;
             console.log('hit')
-            console.log(req.file)
+            console.log(req.file, 'file')
             try {
                 const getSingleUser = await usersCollection.findOne(query);
                 console.log(getSingleUser)
@@ -271,6 +271,7 @@ async function run() {
                 if (data?.bkash !== undefined) updateObject.bkash = data?.bkash;
                 if (data?.rocket !== undefined) updateObject.rocket = data?.rocket;
                 if (data?.nagad !== undefined) updateObject.nagad = data?.nagad;
+                if (data?.isBanned !== undefined) updateObject.isBanned = data?.isBanned;
                 // add update time
                 updateObject.updatedAt = new Date();
                 // Check if req.file exists (image uploaded)
@@ -278,6 +279,7 @@ async function run() {
                     updateObject.image = req.file.filename; // Save the uploaded filename
                     // console.log('aise')
                 }
+                console.log(updateObject)
                 const result = await usersCollection.updateOne(query, { $set: updateObject });
                 // console.log(result);
                 res.json({
@@ -451,6 +453,24 @@ async function run() {
                 })
             }
         })
+        // get all posts that is not approved
+        app.get('/pending-posts', verifyJWT, async (req, res) => {
+            try {
+                const result = await postsCollection.find({
+                    isApproved: false
+                }).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })  
         // get single post 
         app.get('/single-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
