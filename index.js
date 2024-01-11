@@ -470,7 +470,49 @@ async function run() {
                     message: "Internal Server Error"
                 })
             }
-        })  
+        })
+        // get all approved posts
+        app.get('/approved-posts', verifyJWT, async (req, res) => {
+            try {
+                const result = await postsCollection.find({
+                    isApproved: true
+                }).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get all nearest approved posts
+        app.get('/nearest-posts/:location', verifyJWT, async (req, res) => {
+            const { location } = req.params;
+            // make location case insensitive
+            console.log(location)
+            const query = { location: { $regex: new RegExp(location, 'i') } };
+            // also get only approved posts
+            query.isApproved = true;
+            try {
+                const result = await postsCollection.find(query).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+            
+
+        })
         // get single post 
         app.get('/single-post/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
