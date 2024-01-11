@@ -96,24 +96,27 @@ async function run() {
         const otpCollection = database.collection('otp');
         const postsCollection = database.collection('posts');
 
-        // Define the upload route
-        app.post('/upload', upload.single('file'), (req, res) => {
+        // Define the file upload route
+        app.post('/upload', upload.array('files'), (req, res) => {
             try {
-                const uploadedFile = req.file;
-                if (!uploadedFile) {
-                    return res.status(400).json({ message: 'No file uploaded' });
+                const uploadedFiles = req.files;
+
+                if (!uploadedFiles || uploadedFiles.length === 0) {
+                    return res.status(400).json({ message: 'No files uploaded' });
                 }
-                const fileName = uploadedFile.filename;
-                console.log('File uploaded:', fileName);
 
-                // You can do further processing with the uploaded file here
+                const fileNames = uploadedFiles.map(file => file.filename);
+                console.log('Files uploaded:', fileNames);
 
-                return res.status(200).json({ message: 'File uploaded successfully', fileName });
+                // You can do further processing with the uploaded files here
+
+                return res.status(200).json({ message: 'Files uploaded successfully', fileNames });
             } catch (error) {
-                console.error('Error uploading file:', error);
+                console.error('Error uploading files:', error);
                 return res.status(500).json({ message: 'Internal Server Error' });
             }
         });
+
         // create user
         app.post('/register', async (req, res) => {
             const { data } = req.body;
@@ -418,13 +421,19 @@ async function run() {
             }
         })
         // create post
-        app.post('/create-post', verifyJWT, async (req, res) => {
+        app.post('/create-post', verifyJWT, upload.single('file'), async (req, res) => {
             const { data } = req.body;
+
             // add createdAt time and updatedAt time
             data.createdAt = new Date();
             data.updatedAt = new Date();
             try {
-
+                // Check if req.file exists (image uploaded)
+                if (req?.file) {
+                    console.log('file exists')
+                    data.image = req.file.filename;
+                }
+                console.log(data)
                 const result = await postsCollection.insertOne(data);
                 res.json({
                     status: 200,
@@ -510,7 +519,7 @@ async function run() {
                     message: "Internal Server Error"
                 })
             }
-            
+
 
         })
         // get single post 
