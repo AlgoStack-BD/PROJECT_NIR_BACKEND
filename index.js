@@ -95,6 +95,7 @@ async function run() {
         const usersCollection = database.collection('users');
         const otpCollection = database.collection('otp');
         const postsCollection = database.collection('posts');
+        const notificationsCollection = database.collection('notifications');
 
         // Define the file upload route
         app.post('/upload', upload.array('files'), (req, res) => {
@@ -628,6 +629,129 @@ async function run() {
             }
         })
 
+
+        // create notification if vendor approve req from user
+        app.post('/create-notification', async (req, res) => {
+            try {
+                const { data } = req.body;
+                // add createdAt time and updatedAt time
+                data.createdAt = new Date();
+                data.updatedAt = new Date();
+                const result = await notificationsCollection.insertOne(data);
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get all notifications by userId
+        app.get('/user-notifications/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const query = { userId: id };
+                const result = await notificationsCollection.find(query).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get notification by ownerId
+        app.get('/owner-notifications/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const query = { ownerId: id };
+                const result = await notificationsCollection.find(query).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get notification by postId
+        app.get('/post-notifications/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const query = { postId: id };
+                const result = await notificationsCollection.find(query).toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // patch update notification
+        app.patch('/update-notification/:id', async (req, res) => {
+            const { id } = req.params;
+            const { data } = req.body;
+            try {
+                const query = { _id: new ObjectId(id) };
+                const getSingleNotification = await notificationsCollection.findOne(query);
+                if (!getSingleNotification) {
+                    return res.json({
+                        status: 404,
+                        message: "Notification not found"
+                    });
+                }
+                // Construct the update object
+                const updateObject = {};
+                if (data.status !== undefined) updateObject.status = data.status;
+                if (data.ownerRead !== undefined) updateObject.ownerRead = data.ownerRead;
+                if (data.userRead !== undefined) updateObject.userRead = data.userRead;
+                // add update time
+                updateObject.updatedAt = new Date();
+
+                const result = await notificationsCollection.updateOne(query, { $set: updateObject });
+
+                res.json({
+                    status: 200,
+                    data: result
+                });
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                });
+            }
+        });
+        // delete single notification
+        app.delete('/delete-notification/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const query = { _id: new ObjectId(id) };
+                const result = await notificationsCollection.deleteOne(query);
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
