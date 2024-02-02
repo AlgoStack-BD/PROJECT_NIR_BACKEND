@@ -13,7 +13,7 @@ const port = process.env.PORT || 5000
 // Middleware
 app.use(cors())
 app.use(express.json())
-// Middleware to verify JWT in API requests
+
 // Simulated blacklist of invalidated tokens
 const invalidatedTokens = new Set();
 
@@ -96,6 +96,7 @@ async function run() {
         const otpCollection = database.collection('otp');
         const postsCollection = database.collection('posts');
         const notificationsCollection = database.collection('notifications');
+        const subscriptionsCollection = database.collection('subscriptions');
 
         // Define the file upload route
         app.post('/upload', upload.array('files'), (req, res) => {
@@ -752,6 +753,50 @@ async function run() {
                 })
             }
         })
+
+        // make payment
+        app.post('/make-payment', async (req, res) => {
+            try {
+                const { data } = req.body;
+                // check session_id already exists or not
+                const existingPayment = await subscriptionsCollection.findOne({ session_id: data.session_id });
+                if (existingPayment) {
+                    return res.json({
+                        status: 403,
+                        message: "Payment already done"
+                    });
+                }
+
+                // make the post_id able post isAds = true
+                const query = { _id: new ObjectId(data.post_id) };
+                const getSinglePost = await postsCollection.findOne(query);
+                if (!getSinglePost) {
+                    return res.json({
+                        status: 404,
+                        message: "Post not found"
+                    });
+                }
+
+                // Update the post to set isAds to true
+                const updateResult = await postsCollection.updateOne(query, { $set: { isAds: true } });
+
+                // Insert data into subscriptionsCollection
+                data.createdAt = new Date();
+                await subscriptionsCollection.insertOne(data);
+
+                res.json({
+                    status: 200,
+                    data: data
+                });
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                });
+            }
+        });
+
+
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
