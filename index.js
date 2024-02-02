@@ -796,6 +796,23 @@ async function run() {
             }
         });
 
+        // get all subscriptions 
+        app.get('/all-subscriptions', async (req, res) => {
+            try {
+                const result = await subscriptionsCollection.find().toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+
 
     } finally {
         // Ensures that the client will close when you finish/error
