@@ -483,7 +483,7 @@ async function run() {
             }
         })
         // get all approved posts
-        app.get('/approved-posts', verifyJWT, async (req, res) => {
+        app.get('/approved-posts', async (req, res) => {
             try {
                 const result = await postsCollection.find({
                     isApproved: true
