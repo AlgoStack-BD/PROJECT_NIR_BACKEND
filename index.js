@@ -500,6 +500,10 @@ async function run() {
                 })
             }
         })
+
+
+
+        
         // get all nearest approved posts
         app.get('/nearest-posts/:location', verifyJWT, async (req, res) => {
             const { location } = req.params;
