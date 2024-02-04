@@ -97,7 +97,6 @@ async function run() {
         const postsCollection = database.collection('posts');
         const notificationsCollection = database.collection('notifications');
         const subscriptionsCollection = database.collection('subscriptions');
-        const favoritesCollection = database.collection('favorites');
 
         // Define the file upload route
         app.post('/upload', upload.array('files'), (req, res) => {
