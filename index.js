@@ -97,6 +97,7 @@ async function run() {
         const postsCollection = database.collection('posts');
         const notificationsCollection = database.collection('notifications');
         const subscriptionsCollection = database.collection('subscriptions');
+        const favoritesCollection = database.collection('favorites');
 
         // Define the file upload route
         app.post('/upload', upload.array('files'), (req, res) => {
@@ -817,6 +818,100 @@ async function run() {
             }
         })
 
+
+
+        // create favorite post
+        app.post('/create-favorite', async (req, res) => {
+            try {
+                const { data } = req.body;
+                // add createdAt time and updatedAt time
+                data.createdAt = new Date();
+                data.updatedAt = new Date();
+                // insert id in the users facvorite array
+                const query = { _id: new ObjectId(data.userId) };
+                const getSingleUser = await usersCollection.findOne(query);
+                if (!getSingleUser) {
+                    return res.json({
+                        status: 404,
+                        message: "User not found"
+                    });
+                }
+                const postId = data.postId;
+                // if no favoritePosts array exists, create one and push the postId and if exists, push the postId
+                const resultUser = await usersCollection.updateOne
+                    (query,
+                        { $push: { "favoritePosts": postId } }
+                    );
+
+                res.json({
+                    status: 200,
+                    data: resultUser
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // get all favorite posts by userId
+        app.get('/user-favorites/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                // get the favoritePosts array from the user
+                const query = { _id: new ObjectId(id) };
+                const result = await usersCollection.findOne(query);
+                // give all the favorite posts by the postId
+                const favoritePosts = result?.favoritePosts;
+                const favoritePostsArray = [];
+                for (const favoritePost of favoritePosts) {
+                    const query = { _id: new ObjectId(favoritePost) };
+                    const result = await postsCollection.findOne(query);
+                    favoritePostsArray.push(result);
+                }
+                res.json({
+                    status: 200,
+                    data: favoritePostsArray
+                })
+
+
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+        // update favorite post bv userId : remove favorite post
+        app.patch('/update-favorite/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const query = { _id: new ObjectId(id) };
+
+                // if check the postId exists in the favoritePosts array, remove it
+                if (req.body.postId) {
+                    const result = await usersCollection.updateOne
+                        (query,
+                            { $pull: { "favoritePosts": req.body.postId } }
+                        );
+                    res.json({
+                        status: 200,
+                        data: result
+                    })
+                } else {
+                    res.json({
+                        status: 404,
+                        message: "Post not found"
+                    })
+                }
+
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
 
     } finally {
         // Ensures that the client will close when you finish/error
