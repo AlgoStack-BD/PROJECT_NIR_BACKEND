@@ -222,7 +222,7 @@ async function run() {
         // get single user
         app.get('/single-user/:id', verifyJWT, async (req, res) => {
             const { id } = req.params;
-            const query = { _id: new ObjectId(id) };
+            const query = { _id: new ObjectId(id)};
             try {
                 const result = await usersCollection.findOne(query);
                 res.json({
@@ -853,6 +853,8 @@ async function run() {
                 })
             }
         })
+
+        
         // get all favorite posts by userId
         app.get('/user-favorites/:id', async (req, res) => {
             try {
@@ -904,6 +906,26 @@ async function run() {
                     })
                 }
 
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
+
+        // get specific favorite post by userId and postId and response boolean
+        app.get('/specific-favorite/:userId/:postId', async (req, res) => {
+            try {
+                const { userId, postId } = req.params;
+                const query = { _id: new ObjectId(userId) };
+                const result = await usersCollection.findOne(query);
+                const favoritePosts = result?.favoritePosts;
+                const isFavorite = favoritePosts.includes(postId);
+                res.json({
+                    status: 200,
+                    data: isFavorite
+                })
             } catch (err) {
                 res.json({
                     status: 500,
