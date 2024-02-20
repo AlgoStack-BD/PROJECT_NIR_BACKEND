@@ -138,11 +138,13 @@ async function run() {
 
                 // if email is not already registerd,
                 const result = await usersCollection.insertOne(data);
+                const resultData = await usersCollection.findOne({ email});
                 // Generate and send JWT token in the response
                 const token = generateToken({ userId: result.insertedId }); // Include any additional data you want in the payload
                 res.json({
                     status: 200,
                     data: result,
+                    responseData: resultData,
                     jwt: token
                 });
             } catch (err) {
