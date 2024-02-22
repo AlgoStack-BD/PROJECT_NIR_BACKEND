@@ -758,6 +758,24 @@ async function run() {
                 })
             }
         })
+
+        // get single post by postId
+        app.get('/single-notification/:id', async (req, res) => {
+            const { id } = req.params;
+            const query = { _id: new ObjectId(id) };
+            try {
+                const result = await postsCollection.findOne(query);
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            } catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
         // delete single notification
         app.delete('/delete-notification/:id', async (req, res) => {
             try {
