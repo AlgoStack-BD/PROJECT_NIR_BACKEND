@@ -741,6 +741,23 @@ async function run() {
                 });
             }
         });
+
+        //get all notification
+        app.get('/all-notifications', async (req, res) => {
+            try {
+                const result = await notificationsCollection.find().toArray();
+                res.json({
+                    status: 200,
+                    data: result
+                })
+            }
+            catch (err) {
+                res.json({
+                    status: 500,
+                    message: "Internal Server Error"
+                })
+            }
+        })
         // delete single notification
         app.delete('/delete-notification/:id', async (req, res) => {
             try {
