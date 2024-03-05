@@ -505,7 +505,7 @@ async function run() {
 
 
 
-        
+
         // get all nearest approved posts
         app.get('/nearest-posts/:location', verifyJWT, async (req, res) => {
             const { location } = req.params;
@@ -618,7 +618,7 @@ async function run() {
             }
         });
         // delete single post
-        app.delete('/delete-post/:id', verifyJWT, async (req, res) => {
+        app.delete('/delete-post/:id', async (req, res) => {
             const { id } = req.params;
             const query = { _id: new ObjectId(id) };
             try {
