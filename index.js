@@ -738,6 +738,8 @@ async function run() {
                 if (data.status !== undefined) updateObject.status = data.status;
                 if (data.ownerRead !== undefined) updateObject.ownerRead = data.ownerRead;
                 if (data.userRead !== undefined) updateObject.userRead = data.userRead;
+                if(data.senderFrom !== undefined) updateObject.senderFrom = data.senderFrom;
+                if(data.senderTo !== undefined) updateObject.senderTo = data.senderTo;
                 // add update time
                 updateObject.updatedAt = new Date();
 
