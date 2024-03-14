@@ -657,11 +657,16 @@ async function run() {
             }
         })
         // get all notifications by userId
-        app.get('/user-notifications/:id', async (req, res) => {
+        app.get('/to-notifications/:id', async (req, res) => {
             const { id } = req.params;
             try {
-                const query = { userId: id };
+
+                // query is if to data find then check filed if senderType is equal to "receiver" then find the data
+                const query = { to: id, senderTo: "receiver" };
                 const result = await notificationsCollection.find(query).toArray();
+
+                // const query = { to: id };
+                // const result = await notificationsCollection.find(query).toArray();
                 res.json({
                     status: 200,
                     data: result
@@ -674,11 +679,19 @@ async function run() {
             }
         })
         // get notification by ownerId
-        app.get('/owner-notifications/:id', async (req, res) => {
+        app.get('/from-notifications/:id', async (req, res) => {
             const { id } = req.params;
             try {
-                const query = { ownerId: id };
+
+                // query is if from data find then check filed if senderType is equal to "sender" 
+                const query = { from: id, senderFrom: "sender" };
                 const result = await notificationsCollection.find(query).toArray();
+                
+            
+
+
+                // const query = { from: id };
+                // const result = await notificationsCollection.find(query).toArray();
                 res.json({
                     status: 200,
                     data: result
