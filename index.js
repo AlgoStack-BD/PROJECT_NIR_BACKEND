@@ -90,7 +90,8 @@ app.use('/uploads', express.static('uploads'));
 
 async function run() {
     try {
-        // await client.connect();
+        await client.connect();
+        console.log("Connected to MongoDB");
         const database = client.db('nir');
         const usersCollection = database.collection('users');
         const otpCollection = database.collection('otp');
